@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resend Express Mailer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #09090b; color: #fafafa; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mono">R</div>
+      <div>
+        <h1 class="text-base font-semibold tracking-tight">Resend Express Studio</h1>
+        <p class="text-xs text-zinc-400">Local Node.js + Express Backend</p>
+      </div>
+    </div>
+    <span class="text-xs mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      POST /api/send
+    </span>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Composer Form -->
+    <section class="lg:col-span-7 bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-zinc-200">Compose Email</h2>
+        <span class="text-xs text-zinc-500">Leave API Key empty to use .env</span>
+      </div>
+
+      <div>
+        <label class="block text-xs text-zinc-400 mb-1">Resend API Key (Optional override)</label>
+        <input id="apiKey" type="password" placeholder="re_xxxxxxxxx (uses .env if blank)"
+          class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm mono focus:outline-none focus:border-emerald-500" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1">From *</label>
+          <input id="from" type="text" value="onboarding@resend.dev"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm mono focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1">To * (comma separated)</label>
+          <input id="to" type="text" placeholder="user@example.com"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm mono focus:outline-none focus:border-emerald-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1">Reply-To</label>
+          <input id="replyTo" type="email" placeholder="reply@domain.com"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs mono focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1">CC</label>
+          <input id="cc" type="text" placeholder="cc@domain.com"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs mono focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1">BCC</label>
+          <input id="bcc" type="text" placeholder="bcc@domain.com"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs mono focus:outline-none focus:border-emerald-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-zinc-400 mb-1">Subject *</label>
+        <input id="subject" type="text" value="Hello from Express + Resend!"
+          class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" />
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-xs text-zinc-400">Body Content *</label>
+          <div class="flex gap-2 text-xs">
+            <button type="button" id="btnHtml" onclick="setMode('html')" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">HTML</button>
+            <button type="button" id="btnText" onclick="setMode('text')" class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">Plain Text</button>
+          </div>
+        </div>
+        <textarea id="bodyContent" rows="7" oninput="updatePreview()"
+          class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm mono focus:outline-none focus:border-emerald-500">&lt;div style="font-family: sans-serif; padding: 20px;"&gt;
+  &lt;h2 style="color: #10b981;"&gt;It works!&lt;/h2&gt;
+  &lt;p&gt;This email was dispatched from your &lt;strong&gt;Node.js + Express&lt;/strong&gt; backend using the Resend SDK.&lt;/p&gt;
+&lt;/div&gt;</textarea>
+      </div>
+
+      <button id="sendBtn" onclick="sendEmail()"
+        class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer">
+        Send Email via Express
+      </button>
+
+      <!-- Response Box -->
+      <div id="responseBox" class="hidden rounded-lg p-3 text-xs mono overflow-x-auto border"></div>
+    </section>
+
+    <!-- Live Preview & Logs -->
+    <section class="lg:col-span-5 flex flex-col gap-6">
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 flex-1 flex flex-col">
+        <h3 class="text-xs font-medium uppercase tracking-wider text-zinc-400 mb-3">Live Preview</h3>
+        <iframe id="previewFrame" class="w-full flex-1 min-h-[240px] bg-white rounded-lg border border-zinc-800"></iframe>
+      </div>
+
+      <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-medium uppercase tracking-wider text-zinc-400">Session History</h3>
+          <button onclick="clearLogs()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
+        </div>
+        <div id="historyList" class="space-y-2 max-h-48 overflow-y-auto text-xs">
+          <p class="text-zinc-500 italic">No emails sent yet.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let mode = 'html';
+
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById('btnHtml').className = mode === 'html'
+        ? 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+        : 'px-2 py-0.5 rounded bg-zinc-800 text-zinc-400';
+      document.getElementById('btnText').className = mode === 'text'
+        ? 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+        : 'px-2 py-0.5 rounded bg-zinc-800 text-zinc-400';
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const content = document.getElementById('bodyContent').value;
+      const frame = document.getElementById('previewFrame');
+      if (mode === 'html') {
+        frame.srcdoc = content;
+      } else {
+        frame.srcdoc = `<pre style="font-family: monospace; padding: 16px; white-space: pre-wrap;">${content.replace(/</g, '&lt;')}</pre>`;
+      }
+    }
+
+    async function sendEmail() {
+      const btn = document.getElementById('sendBtn');
+      const resBox = document.getElementById('responseBox');
+
+      const payload = {
+        apiKey: document.getElementById('apiKey').value,
+        from: document.getElementById('from').value,
+        to: document.getElementById('to').value,
+        subject: document.getElementById('subject').value,
+        replyTo: document.getElementById('replyTo').value,
+        cc: document.getElementById('cc').value,
+        bcc: document.getElementById('bcc').value,
+      };
+
+      const content = document.getElementById('bodyContent').value;
+      if (mode === 'html') payload.html = content;
+      else payload.text = content;
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      resBox.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        resBox.classList.remove('hidden');
+        if (result.success) {
+          resBox.className = 'rounded-lg p-3 text-xs mono overflow-x-auto border bg-emerald-950/40 border-emerald-500/40 text-emerald-300';
+          resBox.textContent = JSON.stringify(result, null, 2);
+          addHistory(payload.to, payload.subject, result.data?.id || 'Sent');
+        } else {
+          resBox.className = 'rounded-lg p-3 text-xs mono overflow-x-auto border bg-red-950/40 border-red-500/40 text-red-300';
+          resBox.textContent = JSON.stringify(result, null, 2);
+        }
+      } catch (err) {
+        resBox.classList.remove('hidden');
+        resBox.className = 'rounded-lg p-3 text-xs mono overflow-x-auto border bg-red-950/40 border-red-500/40 text-red-300';
+        resBox.textContent = 'Network Error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Email via Express';
+      }
+    }
+
+    function addHistory(to, subject, id) {
+      const list = document.getElementById('historyList');
+      if (list.querySelector('p.italic')) list.innerHTML = '';
+      const item = document.createElement('div');
+      item.className = 'p-2.5 rounded bg-zinc-950 border border-zinc-800 flex justify-between items-center';
+      item.innerHTML = `
+        <div class="truncate pr-2">
+          <div class="text-zinc-200 font-medium truncate">${subject}</div>
+          <div class="text-zinc-500 mono text-[11px] truncate">To: ${to}</div>
+        </div>
+        <span class="text-[11px] mono text-emerald-400 shrink-0">${id}</span>
+      `;
+      list.prepend(item);
+    }
+
+    function clearLogs() {
+      document.getElementById('historyList').innerHTML = '<p class="text-zinc-500 italic">No emails sent yet.</p>';
+    }
+
+    updatePreview();
+  </script>
+</body>
+</html>
